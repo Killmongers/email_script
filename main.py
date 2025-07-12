@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, UploadFile, File, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,26 +8,21 @@ from email.mime.application import MIMEApplication
 from dotenv import load_dotenv
 import os
 
+# Load environment variables
 load_dotenv()
 
-
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-# CORS setup
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Replace with specific domain in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Email credentials
+SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
-# Email sending function
+@app.get("/", response_class=HTMLResponse)
+async def form_page(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 def send_email(to_email: str, subject: str, resume_file: UploadFile) -> bool:
     body = """
 Dear Hiring Manager,
@@ -54,17 +50,15 @@ Swastik Moolya
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "plain"))
 
-    # Attach resume
     try:
         resume_content = resume_file.file.read()
         part = MIMEApplication(resume_content, Name=resume_file.filename)
         part['Content-Disposition'] = f'attachment; filename="{resume_file.filename}"'
         msg.attach(part)
     except Exception as e:
-        print(f"❌ Failed to read or attach file: {e}")
+        print(f"❌ Failed to attach file: {e}")
         return False
 
-    # Send email
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
@@ -75,7 +69,6 @@ Swastik Moolya
         print(f"❌ Failed to send email: {e}")
         return False
 
-# Endpoint to receive email + file
 @app.post("/send-email")
 async def handle_email(
     to_email: str = Form(...),
@@ -83,7 +76,4 @@ async def handle_email(
     resume: UploadFile = File(...)
 ):
     success = send_email(to_email, subject, resume)
-    if success:
-        return {"message": "✅ Email sent successfully with attachment!"}
-    else:
-        return {"error": "❌ Failed to send email."}
+    return {"message": "✅ Email sent!"} if success else {"error": "❌ Email failed!"}
