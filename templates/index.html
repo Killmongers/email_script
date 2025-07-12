@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Email Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>Send Application Email</h2>
+  <form id="emailForm" enctype="multipart/form-data">
+    <input type="email" name="to_email" placeholder="Recipient Email" required>
+    <input type="text" name="subject" placeholder="Subject" required>
+    <input type="file" name="resume" accept=".pdf" required>
+    <button type="submit">Send Email</button>
+  </form>
+  
+  <script>
+    document.getElementById('emailForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+  
+      const formData = new FormData(this);
+  
+      fetch('http://127.0.0.1:8000/send-email', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(result => {
+        alert(result.message || result.error);
+      })
+      .catch(error => alert("❌ Error sending email"));
+    });
+  </script>
+  
+</body>
+</html>
