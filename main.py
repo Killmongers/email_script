@@ -77,3 +77,10 @@ async def handle_email(
 ):
     success = send_email(to_email, subject, resume)
     return {"message": "✅ Email sent!"} if success else {"error": "❌ Email failed!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+
+    port = int(os.environ.get("PORT", 8000))  # Render sets the PORT environment variable
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
